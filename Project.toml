@@ -1,0 +1,13 @@
+name = "IDF"
+uuid = "6b4e4b11-0f33-444e-aff0-157f951632b1"
+authors = ["jojal5 <Jonathan.jalbert@polymtl.ca> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
