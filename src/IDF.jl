@@ -1,6 +1,8 @@
 module IDF
 
-    using Distributions, Gadfly, DataFrames, Extremes, ForwardDiff, Optim, LinearAlgebra, Copulas, MambaLite, GLM, Random
+    using Distributions, Gadfly, DataFrames, Extremes, ForwardDiff, Optim, LinearAlgebra, Copulas, GLM, Random, MambaLite
+
+    # include("MambaLite/src/MambaLite.jl") # for now. After it will be in the "using" line
 
     include("utils.jl")
     include("IDFModel.jl")
@@ -12,9 +14,10 @@ module IDF
         # structures
         dGEVModel,
         NoScalingGumbelModel,
+        SimpleScalingModel,
         FittedMLE,
 
         # methods
         fitMLE
-
+        
 end

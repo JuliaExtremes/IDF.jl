@@ -1,6 +1,6 @@
 function fitMLE(model::IDFModel, data::DataFrame;
-                    initialvalues::Union{Vector{<:Real}, Nothing} = nothing,
-                    print_evolution::Bool = false)
+                initialvalues::Union{Vector{<:Real}, Nothing} = nothing,
+                print_evolution::Bool = false)
 
     # Initial parameters
     if isnothing(initialvalues)
@@ -8,17 +8,38 @@ function fitMLE(model::IDFModel, data::DataFrame;
     end
 
     if print_evolution
-        print("initial values (transformed) : ")
+        print("Initial parameter values : ")
         println(getParams(model, initialvalues))
     end
 
     @assert logLikelihood(model, data, initialvalues) > -Inf "The initial value vector is not a member of the set of possible solutions. At least one data lies outside the distribution support."
 
-    # objective function
+    # objective function and its derivatives
     fobj(θ) = -logLikelihood(model, data, θ)
+    function grad_fobj(G, θ)
+        grad = ForwardDiff.gradient(fobj, θ)
+        for i in eachindex(G)
+            G[i] = grad[i]
+        end
+    end
+    function hessian_fobj(H, θ)
+        hess = ForwardDiff.hessian(fobj, θ)
+        for i in axes(H,1)
+            for j in axes(H,2)
+                H[i,j] = hess[i,j]
+            end
+        end
+    end
 
     # optimization
-    res = Optim.optimize(fobj, initialvalues)
+    if isa(model, NoScalingGumbelModel)
+        res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
+    else 
+        if initialvalues[3] == 0.0
+            initialvalues[3] = 0.0001
+        end
+        res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
+    end
 
     if Optim.converged(res)
         θ̂ = Optim.minimizer(res)
@@ -28,7 +49,7 @@ function fitMLE(model::IDFModel, data::DataFrame;
     end
 
     if print_evolution
-        print("Final values : ")
+        print("Final parameter values : ")
         println(getParams(model, θ̂))
         print("Optimal likelihood : ")
         println(-fobj(θ̂))
