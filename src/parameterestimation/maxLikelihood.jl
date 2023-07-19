@@ -32,14 +32,20 @@ function fitMLE(model::IDFModel, data::DataFrame;
     end
 
     # optimization
-    if isa(model, NoScalingGumbelModel)
-        res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
-    else 
+    # first step : for some model must avoid 0.0 as an initial value for ξ because likelihood singularn at ξ=0
+    if isa(model, NoScalingGEVModel)
+        for i in eachindex(model.D_values)
+            if initialvalues[3*i] == 0.0
+                initialvalues[3*i] = 0.0001
+            end
+        end
+    elseif !isa(model, NoScalingGumbelModel)
         if initialvalues[3] == 0.0
             initialvalues[3] = 0.0001
         end
-        res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
     end
+    # optimization
+    res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
 
     if Optim.converged(res)
         θ̂ = Optim.minimizer(res)
