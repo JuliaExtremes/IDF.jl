@@ -8,14 +8,17 @@ module IDF
     include("IDFModel.jl")
     include("fitted.jl")
     include("parameterestimation.jl")
+    include("testing.jl")
 
     export
 
         # structures
         dGEVModel,
         NoScalingGumbelModel,
+        NoScalingGEVModel,
         SimpleScalingModel,
         FittedMLE,
+        TestSimpleScalingModel,
 
         # methods
         fitMLE
