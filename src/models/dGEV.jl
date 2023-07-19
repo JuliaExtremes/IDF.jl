@@ -31,14 +31,8 @@ function logLikelihood(model::dGEVModel, data::DataFrame, θ::Vector{<:Real})
 
     observations = select(data, Symbol.(to_french_name.(D_values)))
 
-    # GEV parameters
-    μ = exp(θ[1])
-    σ = exp(θ[2])
-    ξ = logistic_inverse(θ[3]) - 0.5
-
-    # scale relationship parameters
-    α = logistic_inverse(θ[4])
-    δ = exp(θ[5])
+    # parameters
+    μ, σ, ξ, α, δ = getParams(model, θ)
 
     #Calculus of the log-likelihood
     log_likelihood = 0.0
@@ -62,7 +56,26 @@ function initializeParams(model::dGEVModel, data::DataFrame)
     # estimated IDF based on duration-by-duration Gumbel parameters estimation
     no_scaling_model = NoScalingGumbelModel(model.D_values)
     fitted_no_scaling_model = fitMLE(no_scaling_model, data)
-    estimated_IDF = estimIDFRelationship(fitted_no_scaling_model, d_ref = model.d_ref)
+    estimated_IDF = estimIDFRelationship(no_scaling_model, fitted_no_scaling_model.θ̂, d_ref = model.d_ref)
 
     return [estimated_IDF[3], estimated_IDF[4], 0.0, estimated_IDF[1], estimated_IDF[2]] #params must lie in the ensemble of reals (ie. be transformed)
+end
+
+function returnLevel(model::dGEVModel, θ::Vector{<:Real}, d::Real, T::Real)
+    """Renvoie le niveau de retour associé à une durée d'accumulation d et à un temps de retour T,
+    pour le modle dGEV paramétré par le vecteur (transformé) θ
+    """
+
+    @assert 1 < T "The return period must be bigger than 1 year."
+
+    μ, σ, ξ, α, δ = getParams(model, θ)
+    d_ref = model.d_ref
+
+    μ_d = μ * ( (d + δ) / (d_ref + δ) ) ^ (-α)
+    σ_d = σ * ( (d + δ) / (d_ref + δ) ) ^ (-α)
+    ξ_d = ξ
+    distrib_extreme_d = GeneralizedExtremeValue(μ_d, σ_d, ξ_d)
+
+    return quantile(distrib_extreme_d, 1 - 1/T)
+
 end
