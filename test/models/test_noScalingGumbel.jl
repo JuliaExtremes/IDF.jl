@@ -1,165 +1,74 @@
-struct NoScalingGumbelModel <: IDFModel
+@testset "noScalingGumbel.jl" begin
+    D_values = [5, 60, 360]
+    model = IDF.NoScalingGumbelModel(D_values)
 
-    params_names::Vector{<:String}
-    D_values::Vector{<:Real} # en minutes
+    @testset "NoScalingGumbelModel()" begin
 
-    function NoScalingGumbelModel(D_values::Vector{<:Real})
-        return new( reduce(vcat, (["μ_"*string(d), "σ_"*string(d)] for d in D_values)), D_values )
+        @test model.D_values == D_values
+        @test length(model.params_names) == length(D_values)*2
+        
+        i = rand(1:length(model.params_names))
+        @test model.params_names[i][1] == ((i%2 == 1) ? 'μ' : 'σ')
     end
 
-end
+    @testset "transformParams()" begin
 
-function transformParams(model::NoScalingGumbelModel, params::Vector{<:Real})
-    """Transforms a vector of parameters for the dGEVModel to put it in the real space"""
-    return log.(params)
-end
+        params1 = [3,2,6,4,8,-5]
+        @test_throws DomainError IDF.transformParams(model, params1)
 
-function getParams(model::NoScalingGumbelModel, θ::Vector{<:Real})
-    """Returns the vector of parameters associated to the transformed vector θ"""
-    return exp.(θ)
-end
+        params2 = [3,2,6,4,8,5]
+        θ = IDF.transformParams(model, params2)
+        @test length(params2) == length(θ)
+        @test θ[1] ≈ log(3)
 
-function logLikelihood(model::NoScalingGumbelModel, data::DataFrame, θ::Vector{<:Real})
-    """For now everything will lie in the initialization"""
-
-    D_values = model.D_values
-
-    observations = select(data, Symbol.(to_french_name.(D_values)))
-
-    # parameters
-    params = getParams(model, θ)
-
-    #Calculus of the log-likelihood
-    log_likelihood = 0.0
-    for i in eachindex(D_values)
-        d = D_values[i]
-
-        μ_d = params[2*i-1]
-        σ_d = params[2*i]
-
-        distrib_extreme_d = Gumbel(μ_d, σ_d)
-        log_likelihood = log_likelihood + sum( logpdf.(Ref(distrib_extreme_d), 
-            observations[:,Symbol(to_french_name(d))]) )
-    end
-    
-    return log_likelihood
-end
-
-function initializeParams(model::NoScalingGumbelModel, data::DataFrame)
-    """Everything lies in the initialization, as we use Extremes.jl to optimize (with the moments) the parameters values"""
-
-    D_values = model.D_values
-    
-    θ_init = []
-    for d in D_values
-        μ, ϕ = Extremes.gumbelfitpwm(data, Symbol(to_french_name(d))).θ̂
-        θ_init = [θ_init; [log(μ), ϕ]]
-    end
-    return Vector{Float64}(θ_init) #params must lie in the ensemble of reals (ie. be transformed)
-end
-
-function estimSimpleScalingRelationship(model::NoScalingGumbelModel, θ::Vector{<:Real};
-    d_ref::Union{Real, Nothing} = nothing)
-    """Return an estimation of the simple scaling relationship parameters (α, C_μ (intercept for log(μ)), C_σ (intercept for log(σ)))
-    based on a linear regression of μ_d and σ_d depending on d. 
-    """
-
-    D_values = model.D_values
-    if isnothing(d_ref)
-        d_ref = maximum(D_values)
     end
 
-    # error function
-    function error(x)
-        """x = [logistic(α), C_μ, C_σ]"""
+    @testset "getParams()" begin
 
-        α, C_μ, C_σ = logistic_inverse(x[1]), x[2], x[3]
+        params2 = [3,2,6,4,8,5]
+        θ = IDF.transformParams(model, params2)
+        params3 = IDF.getParams(model, θ)
+        @test params3 ≈ params2
+    end
 
-        error = 0.0
+    params_value = [9,6,6,4,3,2]
+    n = 30
+    data = IDF.DataFrame(Symbol("5 min") => rand(Gumbel(params_value[1], params_value[2]), n),
+                    Symbol("1 h") => rand(Gumbel(params_value[3], params_value[4]), n),
+                    Symbol("6 h") => rand(Gumbel(params_value[5], params_value[6]), n))
+
+    @testset "logLikelihood()" begin
+
+        θ = IDF.transformParams(model, params_value)
+        loglike = IDF.logLikelihood(model, data, θ)
+
+        #Calculus of the log-likelihood
+        log_likelihood = 0.0
         for i in eachindex(D_values)
-            d=D_values[i]
-            log_μ̂_d = θ[2*i-1]
-            log_σ̂_d = θ[2*i]
-            error = error + ( log_μ̂_d - (C_μ - α*(log(d)-log(d_ref))) )^2
-            error = error + ( log_σ̂_d - (C_σ - α*(log(d)-log(d_ref))) )^2
+            d = D_values[i]
+
+            μ_d = params_value[2*i-1]
+            σ_d = params_value[2*i]
+
+            distrib_extreme_d = Gumbel(μ_d, σ_d)
+            log_likelihood = log_likelihood + sum( logpdf.(Ref(distrib_extreme_d), 
+                data[:,Symbol(IDF.to_french_name(d))]) )
         end
 
-        return error
+        @test loglike ≈ log_likelihood
+
     end
 
-    # initialization
-    α_init = - GLM.coef(GLM.lm(
-                    @formula(y ~ x), 
-                    DataFrame(x = log.(D_values), y = [θ[2*i-1] for i in eachindex(D_values)])
-                    )
-                )[2] # initialization of α via linear regression of log(μ_d) depending on log(d)
-    index_d_ref = argmax(D_values.== d_ref)
-    x_init = [logistic(α_init), θ[2*index_d_ref-1], θ[2*index_d_ref]]
-
-    # optimization
-    result = optimize(error, x_init, BFGS())
-
-    return result.minimizer
-
-end
-
-function estimIDFRelationship(model::NoScalingGumbelModel, θ::Vector{<:Real};
-                                d_ref::Union{Real, Nothing} = nothing)
-    """Return an estimation of the general IDF relationship parameters (α, δ, C_μ (intercept for log(μ)), C_σ (intercept for log(σ)))
-    based on a regression of μ_d and σ_d depending on d. 
-    """
-
-    D_values = model.D_values
-    if isnothing(d_ref)
-        d_ref = maximum(D_values)
+    @testset "initializeParams()" begin
     end
 
-    # error function
-    function error(x)
-        """x = [logistic(α), log(δ), C_μ, C_σ]"""
-
-        α, δ, C_μ, C_σ = logistic_inverse(x[1]), exp(x[2]), x[3], x[4]
-
-        error = 0.0
-        for i in eachindex(D_values)
-            d=D_values[i]
-            log_μ̂_d = θ[2*i-1]
-            log_σ̂_d = θ[2*i]
-            error = error + ( log_μ̂_d - (C_μ - α*(log(d + δ)-log(d_ref + δ))) )^2
-            error = error + ( log_σ̂_d - (C_σ - α*(log(d + δ)-log(d_ref + δ))) )^2
-        end
-
-        return error
+    @testset "estimSimpleScalingRelationship()" begin
     end
 
-    # initialization
-    simple_scaling_params = estimSimpleScalingRelationship(model, θ, d_ref = d_ref)
-    x_init = [simple_scaling_params[1], 0.0, simple_scaling_params[2], simple_scaling_params[3]]
+    @testset "estimIDFRelationship()" begin
+    end
 
-    # optimization
-    result = optimize(error, x_init, BFGS())
-
-    return result.minimizer
-end
-
-function returnLevel(model::NoScalingGumbelModel, θ::Vector{<:Real}, d::Real, T::Real)
-    """Renvoie le niveau de retour associé à une durée d'accumulation d et à un temps de retour T,
-    pour le modèle Gumbel sans invariance d'échelle paramétré par le vecteur (transformé) θ
-    """
-
-    @assert 1 < T "The return period must be bigger than 1 year."
-
-    index_d = (model.D_values .== d)
-    @assert sum(index_d) == 1 "The duration d must be one of the reference durations of the model. " *
-                            "If you want to study intermediate durations, start by using " *
-                            "'estimSimpleScalingRelationship()' or 'estimIDFRelationship() in order to create a " *
-                            "SimpleScalingModel or a dGEVModel."
-    i = argmax(index_d)
-
-    params = getParams(model, θ)
-    μ_d, σ_d = params[2*i-1], params[2*i]
-    distrib_extreme_d = Gumbel(μ_d, σ_d)
-
-    return quantile(distrib_extreme_d, 1 - 1/T)
+    @testset "returnLevel()" begin
+    end
 
 end

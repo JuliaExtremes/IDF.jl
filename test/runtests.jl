@@ -1,4 +1,5 @@
-using IDF
+# using IDF
+include(joinpath(dirname(@__DIR__), "src/IDF.jl"))
 using Test
 
 @testset "IDF.jl" begin

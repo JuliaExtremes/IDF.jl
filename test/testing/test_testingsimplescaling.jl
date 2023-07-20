@@ -3,7 +3,7 @@
     @testset "computeSimpleScalingStatistic()" begin
     end
 
-    @testset" TestSimpleScaling()" begin
+    @testset "testSimpleScaling()" begin
     end
 
 end
