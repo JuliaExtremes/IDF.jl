@@ -16,6 +16,7 @@
         @test IDF.logistic_inverse(x) ≈ 1/(1+exp(-x))
         @test IDF.logistic_inverse(x, a=2, b=3) >= 2
         @test IDF.logistic_inverse(x, a=2, b=3) <= 3
+        
     end
 
     @testset "to_french_name()" begin
@@ -23,6 +24,7 @@
         @test IDF.to_french_name(11) == "11 min"
         @test IDF.to_french_name(120) == "2 h"
         @test_throws InexactError IDF.to_french_name(61)
+
     end
 
 end

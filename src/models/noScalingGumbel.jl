@@ -20,7 +20,7 @@ function getParams(model::NoScalingGumbelModel, θ::Vector{<:Real})
 end
 
 function logLikelihood(model::NoScalingGumbelModel, data::DataFrame, θ::Vector{<:Real})
-    """For now everything will lie in the initialization"""
+    """"""
 
     D_values = model.D_values
 
