@@ -13,13 +13,24 @@ function computedGEVStatistic(D_values::Vector{<:Real}, data::DataFrame, d_out::
     IDF_model_one_out = dGEVModel(D_values_one_out, d_ref = d_out)
     fitted_IDF_one_out = fitMLE(IDF_model_one_out, data)
 
-    # matrice de covariance totale
-    Σ = I/fitted_d_out.I_Fisher + (I/fitted_IDF_one_out.I_Fisher)[1:3, 1:3]
+    try 
+        # matrice de covariance totale
+        Σ = I/fitted_d_out.I_Fisher + (I/fitted_IDF_one_out.I_Fisher)[1:3, 1:3]
+        # statistique de test
+        statistic = norm( sqrt(I/Σ) * (fitted_d_out.θ̂ .- fitted_IDF_one_out.θ̂[1:3]) )^2
 
-    # statistique de test
-    statistic = norm( sqrt(I/Σ) * (fitted_d_out.θ̂ .- fitted_IDF_one_out.θ̂[1:3]) )^2
+        return statistic
 
-    return statistic
+    catch err
+
+        println("The Fisher information matrix is singular :")
+        println(err)
+        println("Returning +∞ as the statistic value")
+
+        return +Inf
+
+    end
+    
 end
 
 struct TestdGEV <: TestIDF
