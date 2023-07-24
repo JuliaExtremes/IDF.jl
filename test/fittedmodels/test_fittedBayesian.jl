@@ -3,7 +3,7 @@
     @testset "getChainParam()" begin
     end
 
-    @testset" getChainFunction()" begin
+    @testset "getChainFunction()" begin
     end
 
     @testset "returnLevelEstimation()" begin
