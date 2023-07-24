@@ -44,8 +44,16 @@ function fitMLE(model::IDFModel, data::DataFrame;
             initialvalues[3] = 0.0001
         end
     end
+    
     # optimization
-    res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
+    res = nothing
+    try 
+        res = Optim.optimize(fobj, grad_fobj, hessian_fobj, initialvalues)
+    catch e
+        println("Gradient-descent algorithm could not converge - trying gradient-free optimization")
+        res = Optim.optimize(fobj, initialvalues)
+    end
+
 
     if Optim.converged(res)
         θ̂ = Optim.minimizer(res)
