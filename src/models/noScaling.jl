@@ -13,7 +13,7 @@ function transformParams(model::NoScalingGEVModel, params::Vector{<:Real})
     """Transforms a vector of parameters for the dGEVModel to put it in the real space"""
 
     n_params = length(model.params_names)
-    θ = Vector{Float64}(undef, n_params)
+    θ = Vector{}(undef, n_params)
 
     for i in 1:n_params
         if i%3 == 0
@@ -30,7 +30,7 @@ function getParams(model::NoScalingGEVModel, θ::Vector{<:Real})
     """Returns the vector of parameters associated to the transformed vector θ"""
 
     n_params = length(model.params_names)
-    params = Vector{Float64}(undef, n_params)
+    params = Vector{}(undef, n_params)
 
     for i in 1:n_params
         if i%3 == 0

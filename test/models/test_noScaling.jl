@@ -29,13 +29,14 @@
     @testset "getParams()" begin
 
         params2 = [3,2,0.1,6,4,0.1,8,5,0.1]
-        θ = IDF.transformParams(model, params2)
+        θ = convert(Array{Float64,1},  IDF.transformParams(model, params2))
         params3 = IDF.getParams(model, θ)
         @test params3 ≈ params2
 
     end
 
     params_value = [9,6,0.1,6,4,0.12,3,2,0.09]
+    θ = convert(Array{Float64,1},  IDF.transformParams(model, params_value))
     n = 30
     data = IDF.DataFrame(Symbol("5 min") => rand(IDF.GeneralizedExtremeValue(params_value[1], params_value[2], params_value[3]), n),
                     Symbol("1 h") => rand(IDF.GeneralizedExtremeValue(params_value[4], params_value[5], params_value[6]), n),
@@ -44,7 +45,6 @@
 
     @testset "logLikelihood()" begin
 
-        θ = IDF.transformParams(model, params_value)
         loglike = IDF.logLikelihood(model, data, θ)
 
         #Calculus of the log-likelihood
@@ -81,7 +81,7 @@
 
     @testset "estimSimpleScalingRelationship()" begin
 
-        estim_GEV = IDF.estimSimpleScalingRelationship(model, IDF.transformParams(model, params_value))
+        estim_GEV = IDF.estimSimpleScalingRelationship(model, θ)
         gumbel_model = IDF.NoScalingGumbelModel(model.D_values)
         gumbel_params = [9,6,6,4,3,2]
         estim_gumbel = IDF.estimSimpleScalingRelationship(gumbel_model, IDF.transformParams(gumbel_model, gumbel_params))
@@ -91,7 +91,7 @@
 
     @testset "estimIDFRelationship()" begin
 
-        estim_GEV = IDF.estimIDFRelationship(model, IDF.transformParams(model, params_value))
+        estim_GEV = IDF.estimIDFRelationship(model, θ)
         gumbel_model = IDF.NoScalingGumbelModel(model.D_values)
         gumbel_params = [9,6,6,4,3,2]
         estim_gumbel = IDF.estimIDFRelationship(gumbel_model, IDF.transformParams(gumbel_model, gumbel_params))
