@@ -1,7 +1,7 @@
 abstract type TestIDF end
 
-include(joinpath("testingmodels", "testingsimplescaling.jl"))
-include(joinpath("testingmodels", "testingdGEV.jl"))
+include(joinpath("testing", "testingsimplescaling.jl"))
+include(joinpath("testing", "testingdGEV.jl"))
 
 function statistic(test_object::TestIDF)
     return test_object.statistic
