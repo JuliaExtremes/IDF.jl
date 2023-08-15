@@ -18,10 +18,10 @@
         distrib = IDF.Normal(g(θ̂), sqrt(var))
 
         cint = IDF.cint(fitted_mle, g)
-        @test cdf(distrib, cint[2]) - cdf(distrib, cint[1]) ≈ 0.95
+        @test IDF.cdf(distrib, cint[2]) - IDF.cdf(distrib, cint[1]) ≈ 0.95
 
         cint = IDF.cint(fitted_mle, g, p=0.8)
-        @test cdf(distrib, cint[2]) - cdf(distrib, cint[1]) ≈ 0.8
+        @test IDF.cdf(distrib, cint[2]) - IDF.cdf(distrib, cint[1]) ≈ 0.8
 
     end
 
