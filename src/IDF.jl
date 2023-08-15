@@ -13,6 +13,7 @@ module IDF
     export
 
         # structures
+        IDFModel,
         dGEVModel,
         NoScalingGumbelModel,
         NoScalingGEVModel,
@@ -21,6 +22,13 @@ module IDF
         TestSimpleScalingModel,
 
         # methods
-        fitMLE
+        to_french_name,
+        to_duration,
+        getDistribution, 
+        sample,
+        logpdf,
+        estimSimpleScalingModel,
+        estimdGEVModel,
+        initializeModel
         
 end
