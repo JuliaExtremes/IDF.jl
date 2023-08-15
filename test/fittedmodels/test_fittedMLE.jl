@@ -4,7 +4,7 @@
     model = IDF.SimpleScalingModel(D_values)
     params = [3,2,0.1,0.7]
     θ̂ = IDF.transformParams(model, params)
-    I_Fisher = Matrix{Float64}(I, 4, 4)
+    I_Fisher = Matrix{Float64}(IDF.I, 4, 4)
 
     fitted_mle = IDF.FittedMLE(model, θ̂, I_Fisher)
 
