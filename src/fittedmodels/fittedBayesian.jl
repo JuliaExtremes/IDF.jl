@@ -1,5 +1,5 @@
 struct FittedBayesian{T} <: Fitted{T}
-    model::T
+    abstract_model::T
     sim::MambaLite.Chains
 end
 
@@ -8,7 +8,7 @@ function getChainParam(fitted_bayesian::FittedBayesian, name_param::String)
     Throws an error if there is no such name.
     """
 
-    names = fitted_bayesian.model.params_names
+    names = fitted_bayesian.abstract_model.params_names
 
     chain = fitted_bayesian.sim
     index_this_param = (names .== name_param)
@@ -17,7 +17,7 @@ function getChainParam(fitted_bayesian::FittedBayesian, name_param::String)
         throw(DomainError(name_param, "Not a valid parameter name. Valid parameter names are : \n "*join(names, ", ")))
     else 
         chain_transformed = vec(chain.value[:,:,1][:,index_this_param]) # this chain is for the transformed parameter
-        fun_param(transformed_param) = getParams(fitted_bayesian.model, 
+        fun_param(transformed_param) = getParams(typeof(fitted_bayesian.abstract_model), 
                                                     fill(transformed_param, 
                                                     length(names))
                                                 )[index_this_param]
@@ -40,10 +40,23 @@ function getChainFunction(fitted_bayesian::FittedBayesian, g::Function)
 
 end
 
+function modelEstimation(fitted_bayesian::FittedBayesian)
+    """Returns a pointwise estimation of the model, based on pointwise estimations (by mean)
+    of every parameter
+    """
+
+    chain = fitted_bayesian.sim
+    x = chain.value[:,:,1]
+    x = [x[i,:] for i in axes(x,1)]
+
+    return mean(x)
+
+end
+
 function returnLevelEstimation(fitted_bayesian::FittedBayesian, d::Real, T::Real)
     """Renvoie une estimation ponctuelle (par la moyenne) du niveau de retour associé à une durée d'accumulation d et à un temps de retour T"""
 
-    g_return_level(θ) = returnLevel(fitted_bayesian.model, θ, d, T)
+    g_return_level(θ) = returnLevel(setParams(fitted_bayesian.abstract_model, θ), d, T)
     chain_return_level = getChainFunction(fitted_bayesian, g_return_level)
 
     return mean(chain_return_level)
@@ -55,7 +68,7 @@ function returnLevelCint(fitted_bayesian::FittedBayesian, d::Real, T::Real;
     pour le niveau de retour associé à une durée d'accumulation d et à un temps de retour T.
     """
 
-    g_return_level(θ) = returnLevel(fitted_bayesian.model, θ, d, T)
+    g_return_level(θ) = returnLevel(setParams(fitted_bayesian.abstract_model, θ), d, T)
     chain_return_level = getChainFunction(fitted_bayesian, g_return_level)
 
     return MambaLite.hpd(chain_return_level, alpha=1-p)

@@ -49,10 +49,10 @@ end
 
 
 function initializeModel(model_type::Type{<:dGEVModel}, data::DataFrame;
-    d_ref::Union{Real, Nothing} = nothing)
+                            d_ref::Union{Real, Nothing} = nothing)
 """Returns a dGEVModel based on a regression of the Gumbel parameters estimated at each duration independently"""
 
-no_scaling_gumbel_model = getEstimatedModel(fitMLE(NoScalingGumbelModel, data))
+no_scaling_gumbel_model = modelEstimation(fitMLE(NoScalingGumbelModel, data))
 
 return estimdGEVModel(no_scaling_gumbel_model, d_ref = d_ref)
 

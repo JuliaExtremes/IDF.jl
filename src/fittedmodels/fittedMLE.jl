@@ -4,7 +4,7 @@ struct FittedMLE{T} <: Fitted{T}
     I_Fisher::Matrix{Float64}
 end
 
-function getEstimatedModel(fitted_mle::FittedMLE)
+function modelEstimation(fitted_mle::FittedMLE)
 
     return setParams(fitted_mle.abstract_model, fitted_mle.θ̂)
 
@@ -27,7 +27,7 @@ end
 function returnLevelEstimation(fitted_mle::FittedMLE, d::Real, T::Real)
     """Renvoie l'estimation ponctuelle du niveau de retour associé à une durée d'accumulation d et à un temps de retour T"""
 
-    return returnLevel(getEstimatedModel(fitted_mle), d, T)
+    return returnLevel(modelEstimation(fitted_mle), d, T)
 end
 
 function returnLevelCint(fitted_mle::FittedMLE, d::Real, T::Real;

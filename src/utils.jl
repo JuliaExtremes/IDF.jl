@@ -21,8 +21,8 @@ end
 function to_duration(d_string::String)
     last_char = d_string[length(d_string):length(d_string)]
     if cmp(last_char, "n") == 0 # the duration is given in minutes
-        return parse(Float64, d_string[1:length(d_string)-4])
+        return Int64(parse(Float64, d_string[1:length(d_string)-4]))
     else   
-        return parse(Float64, d_string[1:length(d_string)-2]) * 60
+        return Int64(parse(Float64, d_string[1:length(d_string)-2]) * 60)
     end
 end

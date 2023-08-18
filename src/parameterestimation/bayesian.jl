@@ -1,7 +1,7 @@
-function logPosterior(model::IDFModel, data::DataFrame, θ;
+function logPosterior(model::IDFModel, data::DataFrame;
                         prior_distribs::Dict{String,ContinuousUnivariateDistribution} = Dict{String,ContinuousUnivariateDistribution}())
 
-    log_posterior = logLikelihood(model, data, θ)
+    log_posterior = logpdf(model, data)
 
     for i in eachindex(model.params_names)
 
@@ -16,21 +16,27 @@ function logPosterior(model::IDFModel, data::DataFrame, θ;
         " the parameter " * name_param *" doesn't fit. The prior must concern the transformation of the parameter." *
         " Hence, its support must be the set of all real numbers."
 
-        log_posterior = log_posterior + logpdf(prior_distrib, θ[i])
+        log_posterior = log_posterior + Extremes.logpdf(prior_distrib, transformParams(model)[i])
     end
 
     return log_posterior
 
 end
 
-function fitBayesian(model::IDFModel, data::DataFrame;
+function fitBayesian(model_type::Type{<:IDFModel}, data::DataFrame;
                         prior_distribs::Dict{String,ContinuousUnivariateDistribution} = Dict{String,ContinuousUnivariateDistribution}(),
-                        initialvalues::Union{Vector{<:Real}, Nothing} = nothing,
+                        initialmodel::Union{IDFModel, Nothing} = nothing,
+                        d_ref::Union{Real, Nothing} = nothing,
                         print_evolution::Bool = false,
                         niter = 500, warmup = 100)
 
+    # initialization
+    if isnothing(initialmodel)
+        initialmodel = modelEstimation( fitMLE(model_type, data, d_ref = d_ref) )
+    end
+
     # Define the loglikelihood function and the gradient for the NUTS algorithm
-    logf(θ::DenseVector) = logPosterior(model, data, θ, prior_distribs = prior_distribs)
+    logf(θ::DenseVector) = logPosterior(setParams(initialmodel, θ), data, prior_distribs = prior_distribs)
     Δlogf(θ::DenseVector) = ForwardDiff.gradient(logf, θ)
     function logfgrad(θ::DenseVector)
         ll = logf(θ)
@@ -38,27 +44,22 @@ function fitBayesian(model::IDFModel, data::DataFrame;
         return ll, g
     end
 
-    # initialization
-    if isnothing(initialvalues)
-        initialvalues = fitMLE(model, data).θ̂
-    end
-
     if print_evolution
-        print("Inital value for θ : ")
-        println(initialvalues)
+        print("Inital value for the parameters : ")
+        println(initialmodel.params)
 
-        print("Log-posterior density for the inital value of θ : ")
-        println(logfgrad(initialvalues)[1])
+        print("Log-posterior density for the inital value of the parameters : ")
+        println(logfgrad(transformParams(initialmodel))[1])
 
-        print("Grad of the log-posterior density for the inital value of θ : ")
-        println(logfgrad(initialvalues)[2])
+        print("Grad of the log-posterior density for the inital value of the parameters : ")
+        println(logfgrad(transformParams(initialmodel))[2])
     end
 
-    names_params = model.params_names
+    names_params = initialmodel.params_names
 
     # computing the chains
-    sim = MambaLite.Chains(niter, length(initialvalues), start = (warmup + 1), names = names_params)
-    θ = MambaLite.NUTSVariate(initialvalues, logfgrad)
+    sim = MambaLite.Chains(niter, length(names_params), start = (warmup + 1), names = names_params)
+    θ = MambaLite.NUTSVariate(transformParams(initialmodel), logfgrad)
     for i in 1:niter
         MambaLite.sample!(θ, adapt = (i <= warmup))
         if i > warmup
@@ -66,6 +67,6 @@ function fitBayesian(model::IDFModel, data::DataFrame;
         end
     end
 
-    return FittedBayesian(model, sim)
+    return FittedBayesian(initialmodel, sim)
 
 end

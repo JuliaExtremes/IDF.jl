@@ -19,7 +19,7 @@ module IDF
         NoScalingGEVModel,
         SimpleScalingModel,
         FittedMLE,
-        TestSimpleScalingModel,
+        TestGEVGEV,
 
         # methods
         to_french_name,
@@ -33,12 +33,18 @@ module IDF
         estimdGEVModel,
         initializeModel,
 
-        getEstimatedModel,
+        modelEstimation,
         cint,
         returnLevelEstimation,
         returnLevelCint,
-        
-        fitMLE
+
+        getChainParam,
+        getChainFunction,
+
+        fitMLE,
+        fitBayesian,
+
+        computeGEVGEVStatistic
 
         
 end
