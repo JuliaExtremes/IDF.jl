@@ -24,11 +24,21 @@ module IDF
         # methods
         to_french_name,
         to_duration,
+
         getDistribution, 
         sample,
         logpdf,
+
         estimSimpleScalingModel,
         estimdGEVModel,
-        initializeModel
+        initializeModel,
+
+        getEstimatedModel,
+        cint,
+        returnLevelEstimation,
+        returnLevelCint,
+        
+        fitMLE
+
         
 end

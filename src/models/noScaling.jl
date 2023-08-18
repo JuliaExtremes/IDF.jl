@@ -33,13 +33,13 @@ function transformParams(model::NoScalingGEVModel)
     """Transforms the vector of parameters of the model to put it in the real space"""
 
     n_params = length(model.params)
-    θ = Vector{}(undef, n_params)
 
-    for i in 1:n_params
+    θ = [log(model.params[1])]
+    for i in 2:n_params
         if i%3 == 0
-            θ[i] = logistic(model.params[i] + 0.5)
+            θ = [ θ ; [logistic(model.params[i] + 0.5)] ]
         else
-            θ[i] = log(model.params[i])
+            θ = [ θ ; [log(model.params[i])] ]
         end
     end
 
@@ -52,13 +52,13 @@ function getParams(model_type::Type{<:NoScalingGEVModel}, θ::Vector{<:Real})
     """Returns the vector of parameters associated to the transformed vector θ"""
 
     n_params = length(θ)
-    params = Vector{}(undef, n_params)
 
-    for i in 1:n_params
+    params = [exp(θ[1])]
+    for i in 2:n_params
         if i%3 == 0
-            params[i] = logistic_inverse(θ[i]) - 0.5
+            params = [params ; [logistic_inverse(θ[i]) - 0.5] ]
         else
-            params[i] = exp(θ[i])
+            params = [params ; [exp(θ[i])] ]
         end
     end
 
@@ -67,7 +67,16 @@ function getParams(model_type::Type{<:NoScalingGEVModel}, θ::Vector{<:Real})
 end
 
 
-function initializeModel(model_type::Type{<:NoScalingGEVModel}, data::DataFrame)
+function setParams(model::NoScalingGEVModel, new_θ::Vector{<:Real})
+    """Returns a new NoScalingGEVModel with the updated set of param values. The argument is θ, ie. the transformed param values"""
+
+    return NoScalingGEVModel(model.D_values, getParams(NoScalingGEVModel, new_θ))
+    
+end
+
+
+function initializeModel(model_type::Type{<:NoScalingGEVModel}, data::DataFrame;
+    d_ref::Union{Real, Nothing} = nothing)
     """As for the NoScalingGumbelModel, we use Extremes.jl to optimize (with the moments) the parameters values"""
 
     no_scaling_gumbel_model = initializeModel(NoScalingGumbelModel, data)
@@ -80,7 +89,7 @@ function initializeModel(model_type::Type{<:NoScalingGEVModel}, data::DataFrame)
     end
 
     params_init = Float64.(params_init)
-    return NoScalingGumbelModel(D_values, params_init)
+    return NoScalingGEVModel(D_values, params_init)
 
 end
 
@@ -88,7 +97,7 @@ function estimSimpleScalingModel(model::NoScalingGEVModel;
                                     d_ref::Union{Real, Nothing} = nothing)
     """Returns an simple scaling model parametrized by an estimation of the simple scaling relationship parameters  (μ_d_ref, σ_d_ref, α)
     based on a linear regression of μ_d and σ_d depending on d. 
-    We use the corresponding method for the NoScalingGumbelModel
+    We use the corresponding method for the NoScalingGumbelModel.
     """
     
     n_params = length(model.params)

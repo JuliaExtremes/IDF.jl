@@ -40,11 +40,22 @@ function getParams(model_type::Type{<:dGEVModel}, θ::Vector{<:Real})
 end
 
 
+function setParams(model::dGEVModel, new_θ::Vector{<:Real})
+    """Returns a new dGEVModelwith the updated set of param values. The argument is θ, ie. the transformed param values"""
+
+    return dGEVModel(model.d_ref, getParams(dGEVModel, new_θ))
+    
+end
+
+
 function initializeModel(model_type::Type{<:dGEVModel}, data::DataFrame;
     d_ref::Union{Real, Nothing} = nothing)
+"""Returns a dGEVModel based on a regression of the Gumbel parameters estimated at each duration independently"""
 
-    return dGEVModel()
-    
+no_scaling_gumbel_model = getEstimatedModel(fitMLE(NoScalingGumbelModel, data))
+
+return estimdGEVModel(no_scaling_gumbel_model, d_ref = d_ref)
+
 end
 
 

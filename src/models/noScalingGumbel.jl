@@ -45,7 +45,16 @@ function getParams(model_type::Type{<:NoScalingGumbelModel}, θ::Vector{<:Real})
 end
 
 
-function initializeModel(model_type::Type{<:NoScalingGumbelModel}, data::DataFrame)
+function setParams(model::NoScalingGumbelModel, new_θ::Vector{<:Real})
+    """Returns a new NoScalingGumbelModel with the updated set of param values. The argument is θ, ie. the transformed param values"""
+
+    return NoScalingGumbelModel(model.D_values, getParams(NoScalingGumbelModel, new_θ))
+    
+end
+
+
+function initializeModel(model_type::Type{<:NoScalingGumbelModel}, data::DataFrame;
+    d_ref::Union{Real, Nothing} = nothing)
     """We use Extremes.jl to optimize (with the moments) the parameters values"""
 
     D_values = to_duration.(names(data))

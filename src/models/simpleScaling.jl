@@ -42,10 +42,21 @@ function getParams(model_type::Type{<:SimpleScalingModel}, θ::Vector{<:Real})
 end
 
 
+function setParams(model::SimpleScalingModel, new_θ::Vector{<:Real})
+    """Returns a new SimpleScalingModel with the updated set of param values. The argument is θ, ie. the transformed param values"""
+
+    return SimpleScalingModel(model.d_ref, getParams(SimpleScalingModel, new_θ))
+    
+end
+
+
 function initializeModel(model_type::Type{<:SimpleScalingModel}, data::DataFrame;
                             d_ref::Union{Real, Nothing} = nothing)
+    """Returns a SimpleScalingModel based on a regression of the Gumbel parameters estimated at each duration independently"""
 
+    no_scaling_gumbel_model = getEstimatedModel(fitMLE(NoScalingGumbelModel, data))
 
-    return SimpleScalingModel()
+    return estimSimpleScalingModel(no_scaling_gumbel_model, d_ref = d_ref)
+
 end
 
