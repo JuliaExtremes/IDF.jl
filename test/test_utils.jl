@@ -27,5 +27,13 @@
 
     end
 
+    @testset "to_duration()" begin
+
+        @test IDF.to_duration(IDF.to_french_name(11)) == 11
+        @test IDF.to_duration("2 h") == IDF.to_duration("120 min") == 120
+        @test_throws InexactError IDF.to_duration("2.5 min")
+
+    end
+
 end
 

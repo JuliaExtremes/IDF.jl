@@ -1,85 +1,89 @@
 @testset "noScalingGumbel.jl" begin
     D_values = [5, 60, 360]
-    model = IDF.NoScalingGumbelModel(D_values)
+    params = [9,6,6,4,3,2]
+    model = IDF.NoScalingGumbelModel(D_values, params)
 
     @testset "NoScalingGumbelModel()" begin
 
         @test model.D_values == D_values
-        @test length(model.params_names) == length(D_values)*2
-        
+        @test model.params == params
+
+        @test length(model.params_names) == 2*length(D_values) == length(params)
         i = rand(1:length(model.params_names))
         @test model.params_names[i][1] == ((i%2 == 1) ? 'μ' : 'σ')
     end
 
+    @testset "getDistribution()" begin
+
+        @test_throws AssertionError IDF.getDistribution(model, 30)
+
+        distrib_1h = IDF.getDistribution(model, 60)
+        @test distrib_1h == IDF.Distributions.Gumbel(params[3], params[4])
+
+    end
+
     @testset "transformParams()" begin
 
-        params1 = [3,2,6,4,8,-5]
-        @test_throws DomainError IDF.transformParams(model, params1)
-
-        params2 = [3,2,6,4,8,5]
-        θ = IDF.transformParams(model, params2)
-        @test length(params2) == length(θ)
-        @test θ[1] ≈ log(3)
+        θ = IDF.transformParams(model)
+        @test length(params) == length(θ)
+        @test θ[1] ≈ log(9)
         @test θ[4] ≈ log(4)
+
+        params2 = [3,2,6,4,8,-5]
+        @test_throws DomainError IDF.transformParams(IDF.NoScalingGumbelModel(D_values, params2))
 
     end
 
     @testset "getParams()" begin
 
-        params2 = [3,2,6,4,8,5]
-        θ = IDF.transformParams(model, params2)
-        params3 = IDF.getParams(model, θ)
-        @test params3 ≈ params2
+        θ = IDF.transformParams(model)
+        params3 = IDF.getParams(IDF.NoScalingGumbelModel, θ)
+        @test params3 ≈ params
+
     end
 
-    params_value = [9,6,6,4,3,2]
+    @testset "setParams()" begin
+
+        θ = IDF.transformParams(model)
+        θ[4] = log(1)
+        model2 = IDF.setParams(model, θ)
+
+        @test model2.D_values == model.D_values
+        @test model2.params_names == model.params_names
+        @test model2.params[2] ≈ model.params[2]
+        @test model2.params[4] ≈ 1
+
+    end
+
     n = 30
-    data = IDF.DataFrame(Symbol("5 min") => rand(IDF.Gumbel(params_value[1], params_value[2]), n),
-                    Symbol("1 h") => rand(IDF.Gumbel(params_value[3], params_value[4]), n),
-                    Symbol("6 h") => rand(IDF.Gumbel(params_value[5], params_value[6]), n))
+    data = IDF.DataFrame(Symbol("5 min") => rand(IDF.Gumbel(params[1], params[2]), n),
+                    Symbol("1 h") => rand(IDF.Gumbel(params[3], params[4]), n),
+                    Symbol("6 h") => rand(IDF.Gumbel(params[5], params[6]), n))
 
-    @testset "logLikelihood()" begin
+    
 
-        θ = IDF.transformParams(model, params_value)
-        loglike = IDF.logLikelihood(model, data, θ)
+    init_model = IDF.initializeModel(IDF.NoScalingGumbelModel,data)
 
-        #Calculus of the log-likelihood
-        log_likelihood = 0.0
-        for i in eachindex(D_values)
-            d = D_values[i]
+    @testset "initializeModel()" begin
 
-            μ_d = params_value[2*i-1]
-            σ_d = params_value[2*i]
-
-            distrib_extreme_d = IDF.Gumbel(μ_d, σ_d)
-            log_likelihood = log_likelihood + sum( IDF.logpdf.(Ref(distrib_extreme_d), 
-                data[:,Symbol(IDF.to_french_name(d))]) )
-        end
-
-        @test loglike ≈ log_likelihood
-
-    end
-
-    θ_init = IDF.initializeParams(model,data)
-
-    @testset "initializeParams()" begin
-
-        @test length(θ_init) == 2*length(D_values)
+        @test length(init_model.params) == 2*length(D_values)
 
         d = D_values[1]
         μ, ϕ = IDF.Extremes.gumbelfitpwm(data, Symbol(IDF.to_french_name(d))).θ̂
-        @test θ_init[1] ≈ log(μ)
-        @test θ_init[2] ≈ ϕ
+        @test init_model.params[1] ≈ μ
+        @test init_model.params[2] ≈ exp(ϕ)
 
     end
 
-    θ = θ_init
     d_ref = maximum(D_values)
-    SS_relationship = IDF.estimSimpleScalingRelationship(model, θ, d_ref=d_ref)
+    SS_model = IDF.estimSimpleScalingModel(init_model, d_ref=d_ref)
 
-    @testset "estimSimpleScalingRelationship()" begin
+    @testset "estimSimpleScalingModel()" begin
 
-        @test length(SS_relationship) == 3
+        @test typeof(SS_model) == IDF.SimpleScalingModel
+        @test length(SS_model.params) == 4
+
+        θ = IDF.transformParams(init_model)
 
         # error function
         function get_error(x)
@@ -105,18 +109,23 @@
                             IDF.DataFrame(x = log.(D_values), y = [θ[2*i-1] for i in eachindex(D_values)])
                             )
                         )[2] # initialization of α via linear regression of log(μ_d) depending on log(d)
+        α_init = maximum( [ minimum([α_init, 0.99]), 0.01 ] ) # α must be between 0 and 1
         index_d_ref = argmax(D_values.== d_ref)
         x_init = [IDF.logistic(α_init), θ[2*index_d_ref-1], θ[2*index_d_ref]]
+        
+        optim_result = IDF.transformParams(SS_model)[4], IDF.transformParams(SS_model)[1], IDF.transformParams(SS_model)[2]
+        @test get_error(optim_result) < get_error(x_init)
 
-        @test get_error(SS_relationship) < get_error(x_init)
     end
 
-    @testset "estimIDFRelationship()" begin
-        θ = θ_init
-        d_ref = maximum(D_values)
-        dGEV_relationship = IDF.estimIDFRelationship(model, θ, d_ref=d_ref)
+    dGEV_model = IDF.estimdGEVModel(init_model, d_ref=d_ref)
 
-        @test length(dGEV_relationship) == 4
+    @testset "estimdGEVModel()" begin
+        
+        @test typeof(dGEV_model) == IDF.dGEVModel
+        @test length(dGEV_model.params) == 5
+
+        θ = IDF.transformParams(init_model)
 
         # error function
         function get_error(x)
@@ -137,20 +146,12 @@
         end
 
         # initialization
-        x_init = [SS_relationship[1], 0.0,SS_relationship[2], SS_relationship[3]]
+        transformed_params = IDF.transformParams(SS_model)
+        x_init = [transformed_params[4], 0.0, transformed_params[1], transformed_params[2]]
 
-        @test get_error(dGEV_relationship) < get_error(x_init)
-    end
-
-    @testset "returnLevel()" begin
-
-        @test_throws AssertionError IDF.returnLevel(model, θ_init, 1.5, 50)
-
-        returnlevel = IDF.returnLevel(model, θ_init, D_values[1], 50)
-        params = IDF.getParams(model, θ_init)
-        μ_d, σ_d = params[1], params[2]
-        distrib_extreme_d = IDF.Gumbel(μ_d, σ_d)
-        @test IDF.cdf(distrib_extreme_d, returnlevel) ≈ 1 - 1/50
+        optim_result = IDF.transformParams(dGEV_model)[4], IDF.transformParams(dGEV_model)[5], IDF.transformParams(dGEV_model)[1], IDF.transformParams(dGEV_model)[2]
+        @test get_error(optim_result) < get_error(x_init)
+        @test get_error(optim_result) < get_error(x_init)
     end
 
 end
