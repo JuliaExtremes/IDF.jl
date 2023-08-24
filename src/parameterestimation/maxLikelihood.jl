@@ -51,7 +51,6 @@ function fitMLE(model_type::Type{<:IDFModel}, data::DataFrame;
     try 
         res = Optim.optimize(fobj, grad_fobj, hessian_fobj, transformParams(initialmodel))
     catch e
-        println(e)
         println("Gradient-descent algorithm could not converge - trying gradient-free optimization")
         res = Optim.optimize(fobj, transformParams(initialmodel))
     end
