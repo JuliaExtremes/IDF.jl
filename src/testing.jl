@@ -1,6 +1,7 @@
 abstract type TestIDF end
 
 include(joinpath("testing", "testGEVGEV.jl"))
+include(joinpath("testing", "testGEVGOF.jl"))
 
 function statistic(test_object::TestIDF)
     return test_object.statistic

@@ -26,3 +26,17 @@ function to_duration(d_string::String)
         return Int64(parse(Float64, d_string[1:length(d_string)-2]) * 60)
     end
 end
+
+function cvmcriterion(pd::UnivariateDistribution, x::Vector{<:Real})
+    """Returns the Crémer - Von Mises criterion associated to the distribution pd fitted to the vector of observations x"""
+
+    x̃ = sort(x)
+    n = length(x)
+
+    T = 1/(12*n) + sum( ((2*i-1)/(2*n) - cdf(pd,x̃[i]) )^2 for i=1:n)
+
+    ω² = T
+
+    return ω²
+
+end

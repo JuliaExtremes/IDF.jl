@@ -20,10 +20,12 @@ module IDF
         SimpleScalingModel,
         FittedMLE,
         TestGEVGEV,
+        TestGEVGOF,
 
         # methods
         to_french_name,
         to_duration,
+        cvmcriterion,
 
         getDistribution, 
         sample,
@@ -44,7 +46,8 @@ module IDF
         fitMLE,
         fitBayesian,
 
-        computeGEVGEVStatistic
+        computeGEVGEVStatistic,
+        computeGEVGOFStatistic
 
         
 end
