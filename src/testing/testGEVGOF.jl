@@ -13,7 +13,7 @@ function computeGEVGOFStatistic(model_type::Type{<:IDFModel}, data::DataFrame, d
     empirical_distrib_d_out = data[:,Symbol(IDF.to_french_name(d_out))]
     statistic = cvmcriterion(estim_distrib_d_out, Array(empirical_distrib_d_out))
 
-    return statistic
+    return statistic, modelEstimation(fitted_IDF_one_out), fitted_IDF_one_out.I_Fisher
 
 end
 
@@ -23,6 +23,8 @@ struct TestGEVGOF <: TestIDF
     data::DataFrame
     d_out::Real # duration that will be left out for testing
     statistic::Real
+    estim_model::IDFModel
+    I_Fisher::Matrix{Float64}
     H0_distrib::Union{ContinuousUnivariateDistribution, Nothing}
 
     function TestGEVGOF(model_type::Type{<:IDFModel}, data::DataFrame;
@@ -33,9 +35,9 @@ struct TestGEVGOF <: TestIDF
             d_out = minimum(D_values)
         end
 
-        statistic = computeGEVGOFStatistic(model_type, data, d_out)
+        statistic, estim_model, I_Fisher = computeGEVGOFStatistic(model_type, data, d_out)
 
-        return new(model_type, data, d_out, statistic, nothing)
+        return new(model_type, data, d_out, statistic, estim_model, I_Fisher,  nothing)
     end
 
 end

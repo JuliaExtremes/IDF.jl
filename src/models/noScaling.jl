@@ -83,6 +83,7 @@ function initializeModel(model_type::Type{<:NoScalingGEVModel}, data::DataFrame;
 
     D_values = no_scaling_gumbel_model.D_values
 
+
     params_init = []
     for i in eachindex(D_values)
         params_init = [params_init; [no_scaling_gumbel_model.params[2*i-1], no_scaling_gumbel_model.params[2*i], 0.0]]

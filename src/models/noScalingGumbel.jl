@@ -61,8 +61,10 @@ function initializeModel(model_type::Type{<:NoScalingGumbelModel}, data::DataFra
     
     params_init = []
     for d in D_values
-        μ, ϕ = Extremes.gumbelfitpwm(data, Symbol(to_french_name(d))).θ̂
+        
+        μ, ϕ = Extremes.gumbelfitpwm(dropmissing(data, Symbol(to_french_name(d))), Symbol(to_french_name(d))).θ̂
         params_init = [params_init; [μ, exp(ϕ)]]
+        
     end
 
     params_init = Float64.(params_init)

@@ -47,7 +47,9 @@ module IDF
         fitBayesian,
 
         computeGEVGEVStatistic,
-        computeGEVGOFStatistic
+        computeGEVGOFStatistic,
 
+        rejectH0,
+        pvalue
         
 end

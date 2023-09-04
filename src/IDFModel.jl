@@ -36,7 +36,7 @@ function logpdf(model::IDFModel, data::DataFrame)
     D_values = to_duration.(names(data))
     multiv_distrib = getDistribution(model, D_values) 
 
-    vectorized_data = [Vector(data[i,:]) for i in axes(data,1)]
+    vectorized_data = [Vector(dropmissing(data)[i,:]) for i in axes(dropmissing(data),1)]
 
     return sum(Distributions.logpdf(multiv_distrib, vectorized_data))
 
