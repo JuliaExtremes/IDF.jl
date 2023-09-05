@@ -3,6 +3,21 @@ struct FittedBayesian{T} <: Fitted{T}
     sim::MambaLite.Chains
 end
 
+function modelEstimation(fitted_bayesian::FittedBayesian)
+    """Returns a pointwise estimation of the model, based on pointwise estimations (by mean)
+    of every parameter
+    """
+
+    chain = fitted_bayesian.sim
+    x = chain.value[:,:,1]
+    x = [x[i,:] for i in axes(x,1)]
+
+    θ̂ = mean(x)
+
+    return setParams(fitted_bayesian.abstract_model, θ̂)
+
+end
+
 function getChainParam(fitted_bayesian::FittedBayesian, name_param::String)
     """Returns the chain associated to the parameter of the model whose name is name_param
     Throws an error if there is no such name.
@@ -37,19 +52,6 @@ function getChainFunction(fitted_bayesian::FittedBayesian, g::Function)
     x = [x[i,:] for i in axes(x,1)]
 
     return g.(x)
-
-end
-
-function modelEstimation(fitted_bayesian::FittedBayesian)
-    """Returns a pointwise estimation of the model, based on pointwise estimations (by mean)
-    of every parameter
-    """
-
-    chain = fitted_bayesian.sim
-    x = chain.value[:,:,1]
-    x = [x[i,:] for i in axes(x,1)]
-
-    return mean(x)
 
 end
 
