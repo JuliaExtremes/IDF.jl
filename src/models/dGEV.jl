@@ -39,12 +39,20 @@ function getParams(model_type::Type{<:dGEVModel}, θ::Vector{<:Real})
     return [exp(θ[1]), exp(θ[2]), logistic_inverse(θ[3])-0.5, logistic_inverse(θ[4]), exp(θ[5])]
 end
 
+function setParams(model::dGEVModel, new::Vector{<:Real}; 
+                    is_transformed::Bool = true)
+    """Returns a new dGEVModel with the updated set of param values. 
+    If is_transformed==true, then "new" contains a set of transformed param values
+    If is_transformed==false, then "new" contains a set of param values
+    """
 
-function setParams(model::dGEVModel, new_θ::Vector{<:Real})
-    """Returns a new dGEVModelwith the updated set of param values. The argument is θ, ie. the transformed param values"""
-
-    return dGEVModel(model.d_ref, getParams(dGEVModel, new_θ))
-    
+    if is_transformed 
+        new_θ = new
+        return dGEVModel(model.d_ref, getParams(dGEVModel, new_θ))
+    else
+        new_params = new
+        return dGEVModel(model.d_ref, new_params)
+    end
 end
 
 

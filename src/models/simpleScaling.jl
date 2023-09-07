@@ -42,11 +42,20 @@ function getParams(model_type::Type{<:SimpleScalingModel}, θ::Vector{<:Real})
 end
 
 
-function setParams(model::SimpleScalingModel, new_θ::Vector{<:Real})
-    """Returns a new SimpleScalingModel with the updated set of param values. The argument is θ, ie. the transformed param values"""
+function setParams(model::SimpleScalingModel, new::Vector{<:Real}; 
+                    is_transformed::Bool = true)
+    """Returns a new SimpleScalingModel with the updated set of param values. 
+    If is_transformed==true, then "new" contains a set of transformed param values
+    If is_transformed==false, then "new" contains a set of param values
+    """
 
-    return SimpleScalingModel(model.d_ref, getParams(SimpleScalingModel, new_θ))
-    
+    if is_transformed 
+        new_θ = new
+        return SimpleScalingModel(model.d_ref, getParams(SimpleScalingModel, new_θ))
+    else
+        new_params = new
+        return SimpleScalingModel(model.d_ref, new_params)
+    end
 end
 
 

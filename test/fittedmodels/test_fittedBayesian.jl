@@ -11,7 +11,7 @@
     chain_array = Array{Float64, 3}(undef, n_chain, 5, 1)
     for i in 1:n_chain
         for j in 1:5
-            chain_array[i,j,1] = rand(Normal(θ̂[j], sqrt(j)))
+            chain_array[i,j,1] = rand(Normal(θ̂[j], 1/100))
         end
     end
 
@@ -23,7 +23,9 @@
 
         estimated_model = IDF.modelEstimation(fitted_bayesian)
         @test typeof(estimated_model) == IDF.dGEVModel
-        @test IDF.transformParams(estimated_model) ≈ [IDF.mean(chain_array[:,j,1]) for j in 1:5]
+        @test estimated_model.params ≈ IDF.mean(model.params for model in IDF.setParams.(
+                                                    Ref(fitted_bayesian.abstract_model),
+                                                    [chain_array[i,:,1] for i in 1:n_chain]))
         @test estimated_model.d_ref == 360
         @test estimated_model.params_names == abstract_model.params_names
 

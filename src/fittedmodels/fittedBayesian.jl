@@ -12,9 +12,12 @@ function modelEstimation(fitted_bayesian::FittedBayesian)
     x = chain.value[:,:,1]
     x = [x[i,:] for i in axes(x,1)]
 
-    θ̂ = mean(x)
+    models_chain = setParams.(Ref(fitted_bayesian.abstract_model), x)
 
-    return setParams(fitted_bayesian.abstract_model, θ̂)
+    estim_params = mean([model.params for model in models_chain])
+
+    return setParams(fitted_bayesian.abstract_model, estim_params,
+                        is_transformed=false)
 
 end
 

@@ -53,6 +53,11 @@
         @test model2.params[2] ≈ model.params[2]
         @test model2.params[4] ≈ 1
 
+        params2 = params
+        params2[4] = 1
+        model3 = IDF.setParams(model, params2, is_transformed = false)
+        @test model2.params ≈ model3.params
+
     end
 
     n = 30

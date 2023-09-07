@@ -66,12 +66,20 @@ function getParams(model_type::Type{<:NoScalingGEVModel}, θ::Vector{<:Real})
 
 end
 
+function setParams(model::NoScalingGEVModel, new::Vector{<:Real}; 
+                    is_transformed::Bool = true)
+    """Returns a new NoScalingGEVModel with the updated set of param values. 
+    If is_transformed==true, then "new" contains a set of transformed param values
+    If is_transformed==false, then "new" contains a set of param values
+    """
 
-function setParams(model::NoScalingGEVModel, new_θ::Vector{<:Real})
-    """Returns a new NoScalingGEVModel with the updated set of param values. The argument is θ, ie. the transformed param values"""
-
-    return NoScalingGEVModel(model.D_values, getParams(NoScalingGEVModel, new_θ))
-    
+    if is_transformed 
+        new_θ = new
+        return NoScalingGEVModel(model.D_values, getParams(NoScalingGEVModel, new_θ))
+    else
+        new_params = new
+        return NoScalingGEVModel(model.D_values, new_params)
+    end
 end
 
 
@@ -82,7 +90,6 @@ function initializeModel(model_type::Type{<:NoScalingGEVModel}, data::DataFrame;
     no_scaling_gumbel_model = initializeModel(NoScalingGumbelModel, data)
 
     D_values = no_scaling_gumbel_model.D_values
-
 
     params_init = []
     for i in eachindex(D_values)
