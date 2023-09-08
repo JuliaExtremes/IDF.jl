@@ -32,15 +32,46 @@
     end
 
     @testset "getChainParam()" begin
+
+        @test_throws DomainError IDF.getChainParam(fitted_bayesian, "κ")
+
+        chain_α = IDF.getChainParam(fitted_bayesian, "α")
+        @test chain_α ≈ IDF.logistic_inverse.(chain_array[:,4,1])
+
     end
 
     @testset "getChainFunction()" begin
+
+        g(θ) = θ[1] + IDF.logistic_inverse(θ[4])
+
+        chain_g = IDF.getChainFunction(fitted_bayesian, g)
+        @test chain_g ≈ g.([chain_array[i,:,1] for i in 1:n_chain])
+
     end
 
     @testset "returnLevelEstimation()" begin
+
+        d = 30
+        T = 20
+        g_return_level(θ) = IDF.returnLevel(IDF.setParams(abstract_model, θ), d, T)
+        
+        return_level_estim = IDF.returnLevelEstimation(fitted_bayesian, d, T)
+        @test return_level_estim ≈ IDF.Distributions.mean(g_return_level.([chain_array[i,:,1] for i in 1:n_chain]))
+
     end
 
     @testset "returnLevelCint()" begin
+
+        d = 30
+        T = 20
+        g_return_level(θ) = IDF.returnLevel(IDF.setParams(abstract_model, θ), d, T)
+        
+        cint_estim = IDF.returnLevelCint(fitted_bayesian, d, T, p=0.8)
+
+        chain_return_level = g_return_level.([chain_array[i,:,1] for i in 1:n_chain])
+        inside_cint = (chain_return_level .>= cint_estim[1]) .&& (chain_return_level .< cint_estim[2])
+        @test sum(inside_cint) ≈ 100*0.8
+
     end
 
 end
