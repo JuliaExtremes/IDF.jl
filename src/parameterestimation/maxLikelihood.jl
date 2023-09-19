@@ -1,7 +1,31 @@
+function computeFisherInformation(abstract_model::IDFModel, θ₀::Vector{<:Real}, D_values::Vector{<:Real};
+                        n_simul = 20000)
+    """Estimates the Fisher Information for a model abstract_model and applied to the set of durations D_values,
+    parametrized by θ₀. For now the computation will be empirical (simulation-based)
+    """
+
+    vals = fill(Matrix{Float64}(IDF.LinearAlgebra.I,4,4), n_simul)
+
+    for i in 1:n_simul
+        
+        x = sample(setParams(abstract_model,θ₀), D_values)
+        logf(θ::DenseVector) = IDF.logpdf(IDF.setParams(abstract_model, θ), x)
+        gradlogf(θ::DenseVector) = ForwardDiff.gradient(logf, θ)
+        hessianlogf(θ::DenseVector) = ForwardDiff.hessian(logf, θ)
+
+        vals[i] = - hessianlogf(θ₀)
+
+    end
+
+    return mean(vals)
+
+end
+
 function fitMLE(model_type::Type{<:IDFModel}, data::DataFrame;
                 initialmodel::Union{IDFModel, Nothing} = nothing,
                 print_evolution::Bool = false,
-                d_ref::Union{Real, Nothing} = nothing)
+                d_ref::Union{Real, Nothing} = nothing,
+                information::String = "observed")
 
     # Initial parameters
     if isnothing(initialmodel)
@@ -71,7 +95,12 @@ function fitMLE(model_type::Type{<:IDFModel}, data::DataFrame;
     end
 
     #Fisher information 
-    I_Fisher = ForwardDiff.hessian(fobj, θ̂)
+    if information == "observed"
+        I_Fisher = ForwardDiff.hessian(fobj, θ̂)
+    else
+        D_values = to_duration.(names(data))
+        I_Fisher = computeFisherInformation(initialmodel, θ̂, D_values) * size(data,1)
+    end
 
     return FittedMLE(initialmodel, θ̂, I_Fisher)
 
