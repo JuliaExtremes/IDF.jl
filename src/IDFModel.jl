@@ -33,12 +33,22 @@ end
 function logpdf(model::IDFModel, data::DataFrame)
     """Returns the logpdf (or log-likelihood) of the model evaluated for the given dataframe"""
 
-    D_values = to_duration.(names(data))
-    multiv_distrib = getDistribution(model, D_values) 
+    value_logpdf = 0.0
+    for data_row in eachrow(data)
+        
+        data_row = data_row[.!ismissing.(Vector(data_row))]
+        vectorized_data_row = Vector{Float64}(data_row)
 
-    vectorized_data = [Vector(dropmissing(data)[i,:]) for i in axes(dropmissing(data),1)]
-
-    return sum(Distributions.logpdf(multiv_distrib, vectorized_data))
+        if size(vectorized_data_row,1) >=1 # if at least one column is not missing for that year
+            D_values = to_duration.(names(data_row))
+            multiv_distrib = getDistribution(model, D_values) 
+            
+            value_logpdf += Distributions.logpdf(multiv_distrib, vectorized_data_row)
+        end
+        
+    end
+    
+    return value_logpdf
 
 end
 
