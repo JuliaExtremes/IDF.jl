@@ -11,7 +11,7 @@ function computeGEVGOFStatistic(model_type::Type{<:IDFModel}, data::DataFrame, d
     fitted_IDF_one_out = fitMLE(model_type, one_out_data, d_ref = d_out, information = information)
 
     estim_distrib_d_out = getDistribution(modelEstimation(fitted_IDF_one_out), d_out)
-    empirical_distrib_d_out = data[:,Symbol(IDF.to_french_name(d_out))]
+    empirical_distrib_d_out = dropmissing( select( data, Symbol(IDF.to_french_name(d_out)) ) )[:,Symbol(IDF.to_french_name(d_out))]
     statistic = cvmcriterion(estim_distrib_d_out, Array(empirical_distrib_d_out))
 
     return statistic, modelEstimation(fitted_IDF_one_out), fitted_IDF_one_out.I_Fisher
