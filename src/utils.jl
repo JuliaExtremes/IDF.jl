@@ -40,3 +40,15 @@ function cvmcriterion(pd::UnivariateDistribution, x::Vector{<:Real})
     return ω²
 
 end
+
+function modifiedADcriterion(pd::UnivariateDistribution, x::Vector{<:Real})
+    """Returns the Crémer - Von Mises criterion associated to the distribution pd fitted to the vector of observations x"""
+
+    x̃ = sort(x)
+    n = length(x)
+
+    T = n/2 - 2*sum(cdf(pd,x̃[i]) for i in 1:n) - sum( ( 2-(2*i-1)/n ) * log( 1 - cdf(pd,x̃[i]) ) for i=1:n)
+
+    return T
+
+end
