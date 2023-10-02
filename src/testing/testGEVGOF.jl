@@ -1,6 +1,5 @@
 function computeGEVGOFStatistic(model_type::Type{<:IDFModel}, data::DataFrame, d_out::Real;
-                                criterion::String = "cvm",
-                                information::String = "observed")
+                                criterion::String = "cvm")
     """Computes the statistic associated to the test procedure that consists by :
         -   Fitting a set of model_type (simple scaling or dGEV) parameters to the data corresponding to every other duration
     and using that lat set of parameters to deduce GEV parameters for d_out
@@ -9,7 +8,7 @@ function computeGEVGOFStatistic(model_type::Type{<:IDFModel}, data::DataFrame, d
 
     # IDF model with every other duration
     one_out_data = data[:,names(data) .!= to_french_name(d_out)]
-    fitted_IDF_one_out = fitMLE(model_type, one_out_data, d_ref = d_out, information = information)
+    fitted_IDF_one_out = fitMLE(model_type, one_out_data, d_ref = d_out)
 
     estim_distrib_d_out = getDistribution(modelEstimation(fitted_IDF_one_out), d_out)
     empirical_distrib_d_out = dropmissing( select( data, Symbol(IDF.to_french_name(d_out)) ) )[:,Symbol(IDF.to_french_name(d_out))]
@@ -38,15 +37,14 @@ struct TestGEVGOF <: TestIDF
 
     function TestGEVGOF(model_type::Type{<:IDFModel}, data::DataFrame;
                             d_out::Union{Real, Nothing} = nothing,
-                            criterion::String = "cvm",
-                            information::String = "observed")
+                            criterion::String = "cvm")
 
         if isnothing(d_out)
             D_values = to_duration.(names(data))
             d_out = minimum(D_values)
         end
 
-        statistic, estim_model, I_Fisher = computeGEVGOFStatistic(model_type, data, d_out, criterion = criterion, information = information)
+        statistic, estim_model, I_Fisher = computeGEVGOFStatistic(model_type, data, d_out, criterion = criterion)
 
         return new(model_type, data, d_out, criterion, statistic, estim_model, I_Fisher,  nothing)
     end

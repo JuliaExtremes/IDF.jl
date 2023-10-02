@@ -45,5 +45,15 @@
 
     end
 
+    @testset "modifiedADcriterion()" begin
+
+        distrib = Normal(0,1)
+        x = IDF.Distributions.rand(distrib, 10)
+        x̃ = sort(x)
+
+        @test IDF.modifiedADcriterion(distrib,x) == 10/2 - 2*sum( IDF.Distributions.cdf(distrib,x̃[i]) for i in 1:10 ) - sum( ( 2-(2*i-1)/10 ) * log( 1 - IDF.Distributions.cdf(distrib,x̃[i]) ) for i=1:10)
+
+    end
+
 end
 

@@ -35,9 +35,9 @@
 
         fitted_SS_prior = IDF.fitBayesian(IDF.SimpleScalingModel, data, prior_distribs=prior_distribs, niter = 500, warmup=200)
 
-        @test IDF.modelEstimation(fitted_SS_prior).params[3] <= IDF.modelEstimation(fitted_SS).params[3]
+        @test IDF.modelEstimation(fitted_SS_prior).params[3] < IDF.modelEstimation(fitted_SS).params[3]
 
-        
+
     end
 
 end
