@@ -4,6 +4,7 @@ using Test, GLM
 
 @testset "IDF.jl" begin
 
+    IDF.Random.seed!(1)
     include("test_utils.jl")
     include("test_IDFModel.jl")
     include("test_fitted.jl")

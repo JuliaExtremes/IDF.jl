@@ -58,11 +58,22 @@ end
 
 function initializeModel(model_type::Type{<:dGEVModel}, data::DataFrame;
                             d_ref::Union{Real, Nothing} = nothing)
-"""Returns a dGEVModel based on a regression of the Gumbel parameters estimated at each duration independently"""
+    """Returns a dGEVModel based on a regression of the Gumbel parameters estimated at each duration independently
+    As this model is just an initialization and will be used at the beginning of an optimization process,
+    we make sure that the parameter values are not at their boundaries"""
 
-no_scaling_gumbel_model = modelEstimation(fitMLE(NoScalingGumbelModel, data))
+    no_scaling_gumbel_model = modelEstimation(fitMLE(NoScalingGumbelModel, data))
+    dGEV_model = estimdGEVModel(no_scaling_gumbel_model, d_ref = d_ref)
 
-return estimdGEVModel(no_scaling_gumbel_model, d_ref = d_ref)
+    μ, σ, ξ, α, δ = dGEV_model.params
+    params_new = [ maximum([μ, 0.01]),
+                maximum([σ, 0.01]),
+                maximum( [ minimum([ξ, 0.49]), -0.49 ] ),
+                maximum( [ minimum([α, 0.99]), 0.01 ] ),
+                maximum([δ, 0.01])
+    ]
+
+    return setParams(dGEV_model, params_new, is_transformed=false)
 
 end
 

@@ -26,9 +26,9 @@ function computeGEVGEVStatistic(model_type::Type{<:IDFModel}, data::DataFrame, d
 
         println("The Fisher information matrix is singular :")
         println(err)
-        println("Returning +∞ as the statistic value")
+        println("Returning 0 as the statistic value")
 
-        return +Inf
+        return 0
 
     end
 

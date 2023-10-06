@@ -61,11 +61,21 @@ end
 
 function initializeModel(model_type::Type{<:SimpleScalingModel}, data::DataFrame;
                             d_ref::Union{Real, Nothing} = nothing)
-    """Returns a SimpleScalingModel based on a regression of the Gumbel parameters estimated at each duration independently"""
+    """Returns a SimpleScalingModel based on a regression of the Gumbel parameters estimated at each duration independently
+    As this model is just an initialization and will be used at the beginning of an optimization process,
+    we make sure that the parameter values are not at their boundaries"""
 
     no_scaling_gumbel_model = modelEstimation(fitMLE(NoScalingGumbelModel, data))
+    SS_model = estimSimpleScalingModel(no_scaling_gumbel_model, d_ref = d_ref)
 
-    return estimSimpleScalingModel(no_scaling_gumbel_model, d_ref = d_ref)
+    μ, σ, ξ, α = SS_model.params
+    params_new = [ maximum([μ, 0.01]),
+                maximum([σ, 0.01]),
+                maximum( [ minimum([ξ, 0.49]), -0.49 ] ),
+                maximum( [ minimum([α, 0.99]), 0.01 ] )
+    ]
+
+    return setParams(SS_model, params_new, is_transformed=false)
 
 end
 
