@@ -85,4 +85,14 @@
 
     end
 
+    @testset "gradF_dref()" begin
+
+        x = 3.0
+        fun(θ) = IDF.cdf(IDF.getDistribution(IDF.setParams(model, θ), d_ref), x)
+        
+        θ₀ = IDF.transformParams(model)
+        @test IDF.gradF_dref(IDF.SimpleScalingModel, x, θ₀) ≈ IDF.ForwardDiff.gradient(fun, θ₀)
+
+    end
+
 end

@@ -1,6 +1,16 @@
 module IDF
 
-    using Distributions, Gadfly, DataFrames, Extremes, ForwardDiff, Optim, LinearAlgebra, Copulas, GLM, Random, MambaLite
+    using Distributions, Gadfly, DataFrames, Extremes, ForwardDiff, Optim, LinearAlgebra, Copulas, GLM, Random, MambaLite, SpecialFunctions, Roots
+
+    import Base.minimum
+    import Base.maximum
+
+    import Distributions.minimum
+    import Distributions.maximum
+    import Distributions.insupport
+    import Distributions.cdf
+    import Distributions.quantile
+
 
     # include("MambaLite/src/MambaLite.jl") # for now. After it will be in the "using" line
 
@@ -13,6 +23,7 @@ module IDF
     export
 
         # structures
+        ZolotarevDistrib,
         IDFModel,
         dGEVModel,
         NoScalingGumbelModel,
@@ -26,6 +37,8 @@ module IDF
         to_french_name,
         to_duration,
         cvmcriterion,
+        modifiedADcriterion,
+        approx_eigenvalues,
 
         getDistribution, 
         sample,
@@ -48,6 +61,7 @@ module IDF
 
         computeGEVGEVStatistic,
         computeGEVGOFStatistic,
+        computeGEVGOFNullDistrib,
 
         rejectH0,
         pvalue

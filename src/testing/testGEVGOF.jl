@@ -24,6 +24,42 @@ function computeGEVGOFStatistic(model_type::Type{<:IDFModel}, data::DataFrame, d
 end
 
 
+function get_g(model::IDFModel, d_out::Real)
+
+    function g(u)
+
+        θ̂ = IDF.transformParams(model)
+        x = quantile(getDistribution(model, d_out), u)
+
+        return gradF_dref(typeof(model), x, θ̂) 
+    end
+
+    return g
+
+end
+
+
+function computeGEVGOFNullDistrib(estim_model::IDFModel, I_Fisher::Matrix{Float64}, criterion::String; 
+                                    k=100)
+    """I_Fisher must the scaled information matrix, ie. divided by the size of the original dataset.
+    """
+
+    g = get_g(estim_model, estim_model.d_ref) # d_out is equal to the reference duration for estim_model
+
+    cov_function_CVM(u,v) = minimum([u,v]) - u*v + Float64(g(u)'/I_Fisher*g(v))
+    cov_function_AD(u,v) = sqrt(1/((1-u)*(1-v))) * ( minimum([u,v]) - u*v + Float64(g(u)'/I_Fisher*g(v)) )
+    
+    if criterion == "cvm"
+        λs = approx_eigenvalues(cov_function_CVM, k)
+    else 
+        λs = approx_eigenvalues(cov_function_AD, k)
+    end
+
+    return ZolotarevDistrib(λs)
+
+end
+
+
 struct TestGEVGOF <: TestIDF
 
     model_type::Type{<:IDFModel}
@@ -37,7 +73,8 @@ struct TestGEVGOF <: TestIDF
 
     function TestGEVGOF(model_type::Type{<:IDFModel}, data::DataFrame;
                             d_out::Union{Real, Nothing} = nothing,
-                            criterion::String = "cvm")
+                            criterion::String = "cvm",
+                            k=100)
 
         if isnothing(d_out)
             D_values = to_duration.(names(data))
@@ -45,8 +82,9 @@ struct TestGEVGOF <: TestIDF
         end
 
         statistic, estim_model, I_Fisher = computeGEVGOFStatistic(model_type, data, d_out, criterion = criterion)
+        H0_distrib = computeGEVGOFNullDistrib(estim_model, I_Fisher/size(data,1), criterion, k=k)
 
-        return new(model_type, data, d_out, criterion, statistic, estim_model, I_Fisher,  nothing)
+        return new(model_type, data, d_out, criterion, statistic, estim_model, I_Fisher,  H0_distrib)
     end
 
 end

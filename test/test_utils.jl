@@ -55,5 +55,64 @@
 
     end
 
+    @testset "approx_eigenvalues()" begin
+
+        ρ(u,v) = u*v
+
+        λs_1 = IDF.approx_eigenvalues(ρ, 10)
+        @test length(λs_1) == 10
+        @test λs_1[9] >= λs_1[10]
+
+        λs_2 = IDF.approx_eigenvalues(ρ, 100)
+        @test length(λs_2) == 100
+        @test (λs_2[1] - 1/3)^2 <= 10^(-3)
+        @test (λs_2[2] - 0.0)^2 <= 10^(-3)
+
+    end
+
+    @testset "ZolotarevDistrib" begin
+
+        ρ(u,v) = minimum([u,v]) - u*v
+        λs = IDF.approx_eigenvalues(ρ, 50)
+        zolo_distrib = IDF.ZolotarevDistrib(λs)
+        
+        @testset "minimum" begin
+            @test IDF.minimum(zolo_distrib) == 0.0
+        end
+
+        @testset "maximum" begin
+            @test IDF.maximum(zolo_distrib) == +Inf
+        end
+
+        @testset "insupport" begin
+            @test !IDF.insupport(zolo_distrib,-1)
+            @test IDF.insupport(zolo_distrib,3)
+        end
+
+        @testset "cdf()" begin
+
+            x = 0.001
+            @test IDF.cdf(zolo_distrib, x) == 0.0
+
+            x = 0.5
+            λ₁ = λs[1]
+            term1 = prod([ (1 - λs[i]/λ₁)^(-0.5) for i in 2:50])
+            term2 = 1/IDF.gamma(0.5)
+            term3 = ( x/(2*λ₁) )^(-0.5)
+            term4 = exp( - (x/(2*λ₁)) )
+            @test IDF.cdf(zolo_distrib, x) == 1 - term1 * term2 * term3 * term4
+
+        end
+
+        @testset "quantile()" begin
+
+            p = 0.95
+            @test IDF.cdf(zolo_distrib, IDF.quantile(zolo_distrib, p)) ≈ p
+
+        end
+
+
+    end
+
 end
 

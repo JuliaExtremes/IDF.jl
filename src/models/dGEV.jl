@@ -78,3 +78,38 @@ function initializeModel(model_type::Type{<:dGEVModel}, data::DataFrame;
 end
 
 
+function gradF_dref(model_type::Type{<:dGEVModel}, x, θ) 
+    """Returns the value of ∇_θ F_dref(x,θ), where :
+        - θ is a transformed vector of global parameters for the dGEV model.
+        - F_dref is the cdf of the marginal variable Y_dref (rain maximas for duration d_ref)
+        - x is in the support of the variable Y_dref.
+    """
+    
+    μ, σ, ξ = exp(θ[1]), exp(θ[2]), IDF.logistic_inverse(θ[3]) - 0.5
+    
+    subgradμ = exp(θ[1])
+    subgradσ = exp(θ[2])
+    subgradξ = (exp(θ[3])) / ( (1 + exp(θ[3]))^2 )
+    
+    a = (ξ*(x-μ))/σ + 1
+    b = - 1/ξ
+
+    
+    gradμ = subgradμ * (
+                - (exp(-a^b) * a^(b-1)) / σ
+    )
+    
+    gradσ = subgradσ * (
+                - ((x-μ) * exp(-a^b) * a^(b-1)) / (σ^2)
+    )
+    
+    gradξ = subgradξ * (
+                - exp(-a^b) * a^b * (
+                       ( log(a) / (ξ^2) ) - ( (x-μ) / (ξ*σ*a) )
+        )
+    )
+    
+    return Vector{Float64}([gradμ, gradσ, gradξ, 0.0, 0.0])
+    
+end
+
