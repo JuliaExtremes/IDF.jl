@@ -43,6 +43,7 @@ module IDF
         getDistribution, 
         sample,
         logpdf,
+        returnLevel,
 
         estimSimpleScalingModel,
         estimdGEVModel,

@@ -67,9 +67,6 @@
                     Symbol("1 h") => rand(IDF.GeneralizedExtremeValue(params[4], params[5], params[6]), n),
                     Symbol("6 h") => rand(IDF.GeneralizedExtremeValue(params[7], params[8], params[9]), n))
 
-
-    
-
     init_model = IDF.initializeModel(IDF.NoScalingGEVModel,data)
 
 
@@ -87,27 +84,33 @@
     end
 
     d_ref = maximum(D_values)
-    SS_model = IDF.estimSimpleScalingModel(init_model, d_ref=d_ref)
+    SS_model = IDF.estimSimpleScalingModel(model, d_ref=d_ref)
 
     @testset "estimSimpleScalingModel()" begin
 
         @test typeof(SS_model) == IDF.SimpleScalingModel
 
         gumbel_model = IDF.NoScalingGumbelModel(D_values, [9,6,6,4,3,2])
-        SS_model_estim_gumbel = IDF.estimSimpleScalingModel(init_model, d_ref = d_ref)
-        @test SS_model.params ≈ SS_model_estim_gumbel.params
+        SS_model_estim_gumbel = IDF.estimSimpleScalingModel(model, d_ref = d_ref)
+        
+        @test SS_model.params[1:2] ≈ SS_model_estim_gumbel.params[1:2]
+        @test SS_model.params[3] ≈ IDF.Distributions.mean([params[3], params[6], params[9]])
+        @test SS_model.params[4] ≈ SS_model_estim_gumbel.params[4]
 
     end
 
-    dGEV_model = IDF.estimdGEVModel(init_model, d_ref=d_ref)
+    dGEV_model = IDF.estimdGEVModel(model, d_ref=d_ref)
 
     @testset "estimdGEVModel()" begin
 
         @test typeof(dGEV_model) == IDF.dGEVModel
 
         gumbel_model = IDF.NoScalingGumbelModel(D_values, [9,6,6,4,3,2])
-        dGEV_model_estim_gumbel = IDF.estimdGEVModel(init_model, d_ref = d_ref)
-        @test dGEV_model.params ≈ dGEV_model_estim_gumbel.params
+        dGEV_model_estim_gumbel = IDF.estimdGEVModel(model, d_ref = d_ref)
+        
+        @test dGEV_model.params[1:2] ≈ dGEV_model_estim_gumbel.params[1:2]
+        @test dGEV_model.params[3] ≈ IDF.Distributions.mean([params[3], params[6], params[9]])
+        @test dGEV_model.params[4:5] ≈ dGEV_model_estim_gumbel.params[4:5]
         
     end
 

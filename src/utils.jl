@@ -11,10 +11,15 @@ function logistic_inverse(y::Real;
 end
 
 function to_french_name(d::Real)
+    d = Int64(round(d))
     if (d<60)
-        return string(Int64(d))*" min"
+        return string(d)*" min"
     else   
-        return string(Int64(d/60))*" h"
+        if d%60 == 0
+            return string(d÷60)*" h"
+        else
+            return string(d÷60)*" h" * " " * to_french_name(d%60)
+        end
     end
 end
 
@@ -25,6 +30,37 @@ function to_duration(d_string::String)
     else   
         return Int64(parse(Float64, d_string[1:length(d_string)-2]) * 60)
     end
+end
+
+function get_durations_labels(D_values::Vector{<:Real})
+    """Returns a vector of strings that wll be the labels given to the durations on the x-axis of the plotted IDF curve"""
+
+    D_values = sort(D_values)
+    D_values_lower_60 = D_values[D_values .< 60]
+    D_values_bigger_60 = D_values[D_values .>= 60]
+
+    labels = Vector{String}()
+    if length(D_values_lower_60) >= 1
+        push!(labels, to_french_name(D_values_lower_60[1]))
+        if length(D_values_lower_60) >= 2
+            for d in D_values_lower_60[2:end-1]
+                push!(labels, string(Int64(round(d))))
+            end
+            push!(labels, to_french_name(D_values_lower_60[end]))
+        end
+    end
+    if length(D_values_bigger_60) >= 1
+        push!(labels, to_french_name(D_values_bigger_60[1]))
+        if length(D_values_bigger_60) >= 2
+            for d in D_values_bigger_60[2:end-1]
+                push!(labels, string(Int64(round(Int64(round(d))/60))))
+            end
+            push!(labels, to_french_name(D_values_bigger_60[end]))
+        end 
+    end
+
+    return labels
+    
 end
 
 function cvmcriterion(pd::UnivariateDistribution, x::Vector{<:Real})
