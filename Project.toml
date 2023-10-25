@@ -1,7 +1,7 @@
 name = "IDF"
 uuid = "6b4e4b11-0f33-444e-aff0-157f951632b1"
 authors = ["jojal5 <Jonathan.jalbert@polymtl.ca> and AugustePaoli99 <auguste.paoli@polymtl.ca>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"
@@ -15,6 +15,8 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MambaLite = "ee262687-6dc1-48e3-a463-c0a35b1bf9d0"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 julia = "^1.8"
