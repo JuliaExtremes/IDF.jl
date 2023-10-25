@@ -23,7 +23,7 @@
 
         @test IDF.to_french_name(11) == "11 min"
         @test IDF.to_french_name(120) == "2 h"
-        @test_throws InexactError IDF.to_french_name(61)
+        @test IDF.to_french_name(372.8) == "6 h 13 min"
 
     end
 
@@ -32,6 +32,17 @@
         @test IDF.to_duration(IDF.to_french_name(11)) == 11
         @test IDF.to_duration("2 h") == IDF.to_duration("120 min") == 120
         @test_throws InexactError IDF.to_duration("2.5 min")
+
+    end
+
+    @testset "get_durations_labels()" begin
+
+        D_values_1 = [1,3,7,55]
+        @test IDF.get_durations_labels(D_values_1) == ["1 min", "3", "7", "55 min"]
+        D_values_2 = [5,60,137.8,1440]
+        @test IDF.get_durations_labels(D_values_2) == ["5 min", "1 h", "2", "24 h"]
+        D_values_2 = [5,10,30,60,360]
+        @test IDF.get_durations_labels(D_values_2) == ["5 min", "10", "30 min", "1 h", "6 h"]
 
     end
 
