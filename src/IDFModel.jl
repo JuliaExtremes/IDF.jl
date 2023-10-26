@@ -92,7 +92,7 @@ function drawIDFCurves(model::Union{SimpleScalingModel, dGEVModel};
     if to_be_returned == "plot"
         p = plot(layers..., Scale.x_log(labels = f_label), Scale.y_log(labels = y -> "$(round(exp(y)))"),
                 Scale.color_discrete_manual(palette...),
-                Guide.title("IDF curves at location " * location_name),
+                Guide.title("IDF curves at " * location_name),
                 Guide.xticks(ticks = log.(D_values)),
                 Guide.yticks(ticks = range(log(minimum(data_return_levels[:,:return_level])), log(maximum(data_return_levels[:,:return_level])), 6)),
                 Guide.xlabel("Rainfall duration"),
@@ -140,7 +140,7 @@ function drawIDFCurves(model::Union{NoScalingGumbelModel, NoScalingGEVModel};
 
     p = plot(layers..., Scale.x_log(labels = f_label), Scale.y_log(labels = y -> "$(round(exp(y)))"),
     Scale.color_discrete_manual(palette...),
-    Guide.title("IDF curves at location " * location_name),
+    Guide.title("IDF curves at " * location_name),
     Guide.xticks(ticks = log.(D_values)),
     Guide.yticks(ticks = range(log(minimum(data_return_levels[:,:return_level])), log(maximum(data_return_levels[:,:return_level])), 6)),
     Guide.xlabel("Rainfall duration"),
