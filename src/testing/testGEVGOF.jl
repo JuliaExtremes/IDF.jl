@@ -49,13 +49,24 @@ function computeGEVGOFNullDistrib(estim_model::IDFModel, I_Fisher::Matrix{Float6
     cov_function_CVM(u,v) = minimum([u,v]) - u*v + Float64(g(u)'/I_Fisher*g(v))
     cov_function_AD(u,v) = sqrt(1/((1-u)*(1-v))) * ( minimum([u,v]) - u*v + Float64(g(u)'/I_Fisher*g(v)) )
     
-    if criterion == "cvm"
-        λs = approx_eigenvalues(cov_function_CVM, k)
-    else 
-        λs = approx_eigenvalues(cov_function_AD, k)
-    end
+    try
 
-    return ZolotarevDistrib(λs)
+        if criterion == "cvm"
+            λs = approx_eigenvalues(cov_function_CVM, k)
+        else 
+            λs = approx_eigenvalues(cov_function_AD, k)
+        end
+
+        return ZolotarevDistrib(λs)
+
+    catch err
+
+        println("The Fisher information matrix is singular :")
+        println(err)
+        println("Returning +∞ as the threshold value")
+
+        return Dirac(+Inf)
+    end
 
 end
 
@@ -69,7 +80,7 @@ struct TestGEVGOF <: TestIDF
     statistic::Real
     estim_model::IDFModel
     I_Fisher::Matrix{Float64}
-    H0_distrib::Union{ContinuousUnivariateDistribution, Nothing}
+    H0_distrib::Union{UnivariateDistribution, Nothing}
 
     function TestGEVGOF(model_type::Type{<:IDFModel}, data::DataFrame;
                             d_out::Union{Real, Nothing} = nothing,

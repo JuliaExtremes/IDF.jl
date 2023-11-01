@@ -106,6 +106,7 @@ end
 
 #####################
 ### "Zolotarev" distribution : distribution that approximates well the behaviour of the tail of the GEVGOF statstic, under H0
+#####################
 
 struct ZolotarevDistrib <: Distribution{Univariate,Continuous}
 
