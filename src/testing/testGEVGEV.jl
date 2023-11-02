@@ -40,7 +40,7 @@ struct TestGEVGEV <: TestIDF
     data::DataFrame
     d_out::Real # duration that will be left out for testing
     statistic::Real
-    H0_distrib::ContinuousUnivariateDistribution
+    H0_distrib::UnivariateDistribution
 
     function TestGEVGEV(model_type::Type{<:IDFModel}, data::DataFrame;
                             d_out::Union{Real, Nothing} = nothing)

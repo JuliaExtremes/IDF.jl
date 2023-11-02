@@ -19,7 +19,7 @@ function getDistribution(model::SimpleScalingModel, d::Real)
 
     μ_d = μ * ( d / model.d_ref ) ^ (-α)
     σ_d = σ * ( d / model.d_ref ) ^ (-α)
-    ξ_d = ξ
+    ξ_d = ξ 
 
     return GeneralizedExtremeValue(μ_d, σ_d, ξ_d)
 

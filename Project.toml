@@ -1,7 +1,7 @@
 name = "IDF"
 uuid = "6b4e4b11-0f33-444e-aff0-157f951632b1"
 authors = ["jojal5 <Jonathan.jalbert@polymtl.ca> and AugustePaoli99 <auguste.paoli@polymtl.ca>"]
-version = "0.2.0"
+version = "0.1.0"
 
 [deps]
 Copulas = "ae264745-0b69-425e-9d9d-cf662c5eec93"

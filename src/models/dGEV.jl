@@ -11,6 +11,7 @@ struct dGEVModel <: IDFModel
 
 end
 
+
 function getDistribution(model::dGEVModel, d::Real) 
     """Returns the distribution of the maximal intensity for duration d, according to the model"""
 
