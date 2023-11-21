@@ -44,6 +44,7 @@ module IDF
         sample,
         logpdf,
         returnLevel,
+        drawIDFCurves,
 
         estimSimpleScalingModel,
         estimdGEVModel,
