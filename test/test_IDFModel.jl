@@ -4,6 +4,7 @@
     include(joinpath("models", "test_noScaling.jl"))
     include(joinpath("models", "test_simpleScaling.jl"))
     include(joinpath("models", "test_dGEV.jl"))
+    include(joinpath("models", "test_compositeScaling.jl"))
 
 
     D_values = [5, 15, 360]

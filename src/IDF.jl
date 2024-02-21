@@ -29,6 +29,7 @@ module IDF
         NoScalingGumbelModel,
         NoScalingGEVModel,
         SimpleScalingModel,
+        CompositeScalingModel,
         FittedMLE,
         TestGEVGEV,
         TestGEVGOF,

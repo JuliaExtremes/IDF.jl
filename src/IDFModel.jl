@@ -4,6 +4,7 @@ include(joinpath("models", "noScalingGumbel.jl"))
 include(joinpath("models", "noScaling.jl"))
 include(joinpath("models", "simpleScaling.jl"))
 include(joinpath("models", "dGEV.jl"))
+include(joinpath("models", "compositeScaling.jl"))
 
 
 function getDistribution(model::IDFModel, D_values::Vector{<:Real}) 
@@ -64,7 +65,7 @@ function returnLevel(model::IDFModel, d::Real, T::Real)
 
 end
 
-function drawIDFCurves(model::Union{SimpleScalingModel, dGEVModel}; 
+function drawIDFCurves(model::Union{SimpleScalingModel, dGEVModel, CompositeScalingModel}; 
                         T_values::Vector{<:Real}=[2,5,10,25,50,100],
                         D_values::Vector{<:Real}=[1/12, 1/6, 1/4, 1/2, 1, 2, 6, 12 ,24]*60,
                         location_name::String = "Imaginary location",
