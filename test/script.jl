@@ -2,38 +2,52 @@ using IDF, Test
 
 using CSV, DataFrames, Distributions, Extremes, Gadfly, LinearAlgebra, SpecialFunctions, Optim, ForwardDiff, Cairo, Fontconfig
 
-df = CSV.read(joinpath("data","702S006.csv"), DataFrame)[:,2:end]
-durations = to_duration.(names(df))
-d_ref = 60
+df = CSV.read(joinpath("data","1108446.csv"), DataFrame)[:,2:end]
+replace_negative_by_missing(x) = ismissing(x) ? x : ((x < 0) ? missing : x)
+for name in names(df)
+   df[:,Symbol(name)] = df[:,Symbol(name)] ./ (IDF.to_duration(name)/60.0)
+    transform!(df, Symbol(name) => (x -> replace_negative_by_missing.(x)) => Symbol(name))
+end
 
-ss_model = SimpleScalingModel(d_ref, [0, 1, 0, .8])
+df
 
-data = DataFrame(oneh = [2,3], twoh = [0,1])
-rename!(data, :oneh => Symbol("1 h"), :twoh => Symbol("2 h"))
-IDF.logpdf(ss_model,data)
+d_out=5
 
-fitted_mle = fitMLE(SimpleScalingModel, df, d_ref = 60)
-modelEstimation(fitted_mle)
-IDF.cint(fitted_mle, x -> exp(x[1]))
-IDF.cint(fitted_mle, x -> exp(x[2]))
-IDF.cint(fitted_mle, x -> IDF.logistic_inverse(x[3]) - 0.5)
-IDF.cint(fitted_mle, x -> IDF.logistic_inverse(x[4]))
-IDF.cint(fitted_mle, x -> exp(x[5])/60)
+test_result = TestGEVGOF(SimpleScalingModel, df, d_out=d_out)
+estim_model = test_result.estim_model
 
-fitted_mle.I_Fisher
-
-returnLevelCint(fitted_mle, 24*60, 1/0.05, p=  0.9)
+quantile(test_result.H0_distrib, 0.95)
 
 
+# maintenant si je redéfinis le calcul de l'info de Fisher :
 
+I_Fishers = Dict()
 
-SS_params = [2,0.3,0.1,0.7]
-SS_model = SimpleScalingModel(24*60, SS_params)
-drawIDFCurves(SS_model)
+D_values_to_consider = IDF.to_duration.(names(df)[names(df) .!= IDF.to_french_name(d_out)])
+for d in D_values_to_consider
 
-CS_params = [2,0.3,0.1,0.7, 0.7 + 0.7*2]
-CS_model = CompositeScalingModel(24*60, CS_params)
-set_default_plot_size(18cm, 12cm)
-p = drawIDFCurves(CS_model)
-draw(PDF("IDFcurve_composite_scaling_ratio_2.pdf", 18cm, 12cm), p)
+    data_row = df[:,Symbol(IDF.to_french_name(d))]
+    data_row = data_row[.!ismissing.(Vector(data_row))]
 
+    vectorized_data_row = Vector{Float64}(data_row)
+            
+    function ll(θ)
+        model = IDF.setParams(estim_model, θ)
+        distrib_d = IDF.getDistribution(model, d) 
+        return sum(IDF.Distributions.logpdf.(distrib_d, vectorized_data_row))
+    end
+
+    θ̂ = IDF.transformParams(estim_model)
+    
+    I_Fishers[d] = - IDF.ForwardDiff.hessian(ll, θ̂) / length(vectorized_data_row)
+
+end
+
+I_Fisher_tot = sum(mat for (key,mat) in I_Fishers)
+
+new_H0_distrib = IDF.computeGEVGOFNullDistrib(estim_model, I_Fisher_tot, "cvm", k=100)
+quantile(new_H0_distrib, 0.95)
+
+# on est passés de 0.75 à 0.71. Or la statistique était de 0.72 :
+
+test_result.statistic
