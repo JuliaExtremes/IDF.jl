@@ -127,8 +127,14 @@ function estimSimpleScalingModel(model::NoScalingGumbelModel;
     result = optimize(error, x_init, BFGS())
 
     # model construction
+    μ, σ, ξ, α = getParams(SimpleScalingModel, [result.minimizer[2], result.minimizer[3], 0.0, result.minimizer[1]])
+    params_new = [ maximum([μ, 0.01]),
+                maximum([σ, 0.01]),
+                maximum( [ minimum([ξ, 0.49]), -0.49 ] ),
+                maximum( [ minimum([α, 0.99]), 0.01 ] )
+    ]
     SS_model = SimpleScalingModel(d_ref, 
-                        getParams(SimpleScalingModel, [result.minimizer[2], result.minimizer[3], 0.0, result.minimizer[1]])
+                        params_new
                         )
 
     return SS_model
@@ -175,8 +181,15 @@ function estimdGEVModel(model::NoScalingGumbelModel;
     result = optimize(error, x_init, BFGS())
 
     # model construction
+    μ, σ, ξ, α, δ = getParams(dGEVModel, [result.minimizer[3], result.minimizer[4], 0.0, result.minimizer[1], result.minimizer[2]])
+    params_new = [ maximum([μ, 0.01]),
+                maximum([σ, 0.01]),
+                maximum( [ minimum([ξ, 0.49]), -0.49 ] ),
+                maximum( [ minimum([α, 0.99]), 0.01 ] ),
+                maximum([δ, 0.01])
+    ]
     dGEV_model = dGEVModel(d_ref, 
-                        getParams(dGEVModel, [result.minimizer[3], result.minimizer[4], 0.0, result.minimizer[1], result.minimizer[2]])
+                        params_new
                         )
 
     return dGEV_model
